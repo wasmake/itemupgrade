@@ -28,7 +28,7 @@ dependencies {
     compileOnly("net.essentialsx:EssentialsX:2.21.0-SNAPSHOT")
 
     // Configurate
-    api("org.spongepowered:configurate-yml:4.2.0-SNAPSHOT")
+    api("org.spongepowered:configurate-yaml:4.1.2")
 
     // Add lombok
     compileOnly("org.projectlombok:lombok:1.18.22")
