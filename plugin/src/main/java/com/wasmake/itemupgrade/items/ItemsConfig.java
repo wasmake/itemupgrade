@@ -11,20 +11,22 @@ public class ItemsConfig {
     public ItemStack fragItem;
     public Map<Integer, List<ItemUpgradeConfig>> items;
 
-    public ItemsConfig(ItemStack fragItem, Map<Integer, List<ItemUpgradeConfig>> items) {
-        this.fragItem = fragItem;
-        this.items = items;
-    }
-
-    public ItemsConfig() {
-    }
+    public ItemsConfig() {}
 
     public ItemStack fragItem() {
         return fragItem;
     }
 
+    public void setItems(Map<Integer, List<ItemUpgradeConfig>> items) {
+        this.items = items;
+    }
+
     public Map<Integer, List<ItemUpgradeConfig>> items() {
         return items == null ? Map.of() : items;
+    }
+
+    public void setFragItem(ItemStack fragItem) {
+        this.fragItem = fragItem;
     }
 
 }
