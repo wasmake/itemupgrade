@@ -11,6 +11,11 @@ public class ItemsConfig {
     public ItemStack fragItem;
     public Map<Integer, List<ItemUpgradeConfig>> items;
 
+    public ItemsConfig(ItemStack fragItem, Map<Integer, List<ItemUpgradeConfig>> items) {
+        this.fragItem = fragItem;
+        this.items = items;
+    }
+
     public ItemsConfig() {
     }
 
