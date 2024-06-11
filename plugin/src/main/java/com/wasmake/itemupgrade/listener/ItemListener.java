@@ -15,10 +15,10 @@ public class ItemListener implements Listener {
     public void onAnvilRename(PrepareAnvilEvent event) {
         ItemStack item = event.getInventory().getItem(0);
         if (item != null) {
-            Map<Integer, List<ItemUpgradeConfig>> items = ItemUpgrade.getInstance().getItemsConfig().getItems();
+            Map<Integer, List<ItemUpgradeConfig>> items = ItemUpgrade.getInstance().getItemsConfig().items();
             for (List<ItemUpgradeConfig> itemUpgradeConfigs : items.values()) {
                 for (ItemUpgradeConfig itemUpgradeConfig : itemUpgradeConfigs) {
-                    if (item.isSimilar(itemUpgradeConfig.getItem())) {
+                    if (item.isSimilar(itemUpgradeConfig.item())) {
                         event.setResult(null);
                         return;
                     }

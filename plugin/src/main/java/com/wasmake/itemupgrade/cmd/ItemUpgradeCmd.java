@@ -6,7 +6,8 @@ import com.wasmake.itemupgrade.command.api.annotation.Command;
 import com.wasmake.itemupgrade.command.api.annotation.OptArg;
 import com.wasmake.itemupgrade.command.api.annotation.Sender;
 import com.wasmake.itemupgrade.items.ItemUpgradeConfig;
-import com.wasmake.itemupgrade.items.ItemsConfig;
+import java.util.HashMap;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -16,16 +17,15 @@ import org.bukkit.inventory.ItemStack;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+import org.spongepowered.configurate.serialize.SerializationException;
 
 public class ItemUpgradeCmd extends AbstractCommand {
 
-    private ItemsConfig itemsConfig;
+    private final ItemUpgrade itemUpgrade;
 
     public ItemUpgradeCmd() {
         super("itemupgrade", "iu");
-
-        this.itemsConfig = ItemUpgrade.getInstance().getItemsConfig();
+        this.itemUpgrade = ItemUpgrade.getInstance();
     }
 
     @Command(name = "setfrag", desc = "Set frag item")
@@ -37,17 +37,20 @@ public class ItemUpgradeCmd extends AbstractCommand {
         }
 
         // Set the frag item
-        ItemStack itemStack = sender.getInventory().getItemInMainHand();
-        this.itemsConfig.setFragItem(itemStack);
-        this.itemsConfig.save();
+        itemUpgrade.updateConfig(node -> {
+            try {
+                node.node("fragItem").set(sender.getInventory().getItemInMainHand());
+            } catch (SerializationException e) {
+                throw new RuntimeException(e);
+            }
+        });
 
         sender.sendMessage("§aFrag item set.");
     }
 
     @Command(name = "set", desc = "Set an item to the upgrade menu")
     public void execute(@Sender CommandSender sender, int index, int level, int cost) {
-        if (sender instanceof Player) {
-            Player player = (Player) sender;
+        if (sender instanceof Player player) {
             // Check if is OP
             if (!player.isOp()) {
                 player.sendMessage("§cYou don't have permission to use this command.");
@@ -89,16 +92,15 @@ public class ItemUpgradeCmd extends AbstractCommand {
     @Command(name = "show", desc = "Display a menu with all the items to the player")
     public void executeShow(@Sender Player player) {
         // Show the items menu
-        Map<Integer, List<ItemUpgradeConfig>> items = this.itemsConfig.getItems();
+        Map<Integer, List<ItemUpgradeConfig>> items = itemUpgrade.getItemsConfig().items();
 
         // Create a Bukkit inventory
-        String title = "Item Upgrade Menu";
-        Inventory inventory = Bukkit.createInventory(player, 54, title);
+        Inventory inventory = Bukkit.createInventory(player, 54, Component.text("Item Upgrade Menu"));
 
         for (int index : items.keySet()) {
             List<ItemUpgradeConfig> itemUpgradeConfigs = items.get(index);
             for (ItemUpgradeConfig itemUpgradeConfig : itemUpgradeConfigs) {
-                inventory.addItem(itemUpgradeConfig.getItem());
+                inventory.addItem(itemUpgradeConfig.item());
             }
         }
 
@@ -112,13 +114,13 @@ public class ItemUpgradeCmd extends AbstractCommand {
     }
 
     public void giveItem(Player player, int index, int level) {
-        Map<Integer, List<ItemUpgradeConfig>> items = this.itemsConfig.getItems();
+        Map<Integer, List<ItemUpgradeConfig>> items = itemUpgrade.getItemsConfig().items();
 
         if (items.containsKey(index)) {
             List<ItemUpgradeConfig> itemUpgradeConfigs = items.get(index);
             for (ItemUpgradeConfig itemUpgradeConfig : itemUpgradeConfigs) {
-                if (itemUpgradeConfig.getLevel() == level) {
-                    player.getInventory().addItem(itemUpgradeConfig.getItem());
+                if (itemUpgradeConfig.level() == level) {
+                    player.getInventory().addItem(itemUpgradeConfig.item());
                     player.sendMessage("§aItem delivered to " + player.getName());
                     return;
                 }
@@ -138,9 +140,9 @@ public class ItemUpgradeCmd extends AbstractCommand {
         }
 
         // Check if the player has the required frags to upgrade the item in the inventory
-        ItemStack fragItem = this.itemsConfig.getFragItem();
+        ItemStack fragItem = itemUpgrade.getItemsConfig().fragItem();
         if (fragItem != null) {
-            int cost = itemUpgradeConfig.getCost();
+            int cost = itemUpgradeConfig.cost();
             int amount = 0;
             for (ItemStack item : player.getInventory().getContents()) {
                 if (item != null && item.isSimilar(fragItem)) {
@@ -168,7 +170,7 @@ public class ItemUpgradeCmd extends AbstractCommand {
         }
 
         // Upgrade the item
-        player.getInventory().setItemInMainHand(itemUpgradeConfig.getItem());
+        player.getInventory().setItemInMainHand(itemUpgradeConfig.item());
         player.sendMessage("§aItem upgraded.");
 
         // Save the player's inventory
@@ -176,13 +178,13 @@ public class ItemUpgradeCmd extends AbstractCommand {
     }
 
     public ItemUpgradeConfig getNextUpgrade(ItemStack item){
-        Map<Integer, List<ItemUpgradeConfig>> items = this.itemsConfig.getItems();
+        Map<Integer, List<ItemUpgradeConfig>> items = itemUpgrade.getItemsConfig().items();
 
         for (int index : items.keySet()) {
             List<ItemUpgradeConfig> itemUpgradeConfigs = items.get(index);
             for (ItemUpgradeConfig itemUpgradeConfig : itemUpgradeConfigs) {
-                if (itemUpgradeConfig.getItem().isSimilar(item)) {
-                    int level = itemUpgradeConfig.getLevel();
+                if (itemUpgradeConfig.item().isSimilar(item)) {
+                    int level = itemUpgradeConfig.level();
                     if (level < itemUpgradeConfigs.size()) {
                         return getLevel(index, level + 1);
                     }
@@ -193,12 +195,12 @@ public class ItemUpgradeCmd extends AbstractCommand {
     }
 
     public ItemUpgradeConfig getLevel(int index, int level) {
-        Map<Integer, List<ItemUpgradeConfig>> items = this.itemsConfig.getItems();
+        Map<Integer, List<ItemUpgradeConfig>> items = itemUpgrade.getItemsConfig().items();
 
         if (items.containsKey(index)) {
             List<ItemUpgradeConfig> itemUpgradeConfigs = items.get(index);
             for (ItemUpgradeConfig itemUpgradeConfig : itemUpgradeConfigs) {
-                if (itemUpgradeConfig.getLevel() == level) {
+                if (itemUpgradeConfig.level() == level) {
                     return itemUpgradeConfig;
                 }
             }
@@ -208,39 +210,59 @@ public class ItemUpgradeCmd extends AbstractCommand {
     }
 
     public void addItem(ItemStack itemStack, int index, int level, int cost) {
-        Map<Integer, List<ItemUpgradeConfig>> items = this.itemsConfig.getItems();
+        Map<Integer, List<ItemUpgradeConfig>> items = itemUpgrade.getItemsConfig().items();
 
         List<ItemUpgradeConfig> savedItems = new ArrayList<>();
+
         if (items.containsKey(index)) {
             savedItems.addAll(items.get(index));
         }
+
         savedItems.add(new ItemUpgradeConfig(level, cost, itemStack));
 
         items.put(index, savedItems);
 
-        this.itemsConfig.save();
+        itemUpgrade.updateConfig(node -> {
+            try {
+                node.node("items").set(items);
+            } catch (SerializationException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public void removeItem(int level) {
         // Remove item by level
-        Map<Integer, List<ItemUpgradeConfig>> items = this.itemsConfig.getItems();
+        Map<Integer, List<ItemUpgradeConfig>> items = itemUpgrade.getItemsConfig().items();
 
         for (List<ItemUpgradeConfig> itemUpgradeConfigs : items.values()) {
             for (ItemUpgradeConfig itemUpgradeConfig : itemUpgradeConfigs) {
-                if (itemUpgradeConfig.getLevel() == level) {
+                if (itemUpgradeConfig.level() == level) {
                     itemUpgradeConfigs.remove(itemUpgradeConfig);
                     break;
                 }
             }
         }
 
+        Map<Integer, List<ItemUpgradeConfig>> orderedItems = new HashMap<>();
+
         // Order again the levels
-        for (List<ItemUpgradeConfig> itemUpgradeConfigs : items.values()) {
+        for (final var entry : items.entrySet()) {
+            final var index = entry.getKey();
+            final var itemUpgradeConfigs = entry.getValue();
             for (int i = 0; i < itemUpgradeConfigs.size(); i++) {
-                itemUpgradeConfigs.get(i).setLevel(i + 1);
+                final var oldItem = itemUpgradeConfigs.get(i);
+                orderedItems.computeIfAbsent(index, k -> new ArrayList<>())
+                    .add(new ItemUpgradeConfig(i + 1, oldItem.cost(), oldItem.item()));
             }
         }
 
-        this.itemsConfig.save();
+        itemUpgrade.updateConfig(node -> {
+            try {
+                node.node("items").set(orderedItems);
+            } catch (SerializationException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 }
