@@ -210,9 +210,10 @@ public class ItemUpgradeCmd extends AbstractCommand {
     }
 
     public void addItem(ItemStack itemStack, int index, int level, int cost) {
-        Map<Integer, List<ItemUpgradeConfig>> items = itemUpgrade.getItemsConfig().items();
+        final var items = itemUpgrade.getItemsConfig().items();
+        final var newItems = new HashMap<>(itemUpgrade.getItemsConfig().items());
 
-        List<ItemUpgradeConfig> savedItems = new ArrayList<>();
+        final var savedItems = new ArrayList<ItemUpgradeConfig>();
 
         if (items.containsKey(index)) {
             savedItems.addAll(items.get(index));
@@ -220,11 +221,11 @@ public class ItemUpgradeCmd extends AbstractCommand {
 
         savedItems.add(new ItemUpgradeConfig(level, cost, itemStack));
 
-        items.put(index, savedItems);
+        newItems.put(index, savedItems);
 
         itemUpgrade.updateConfig(node -> {
             try {
-                node.node("items").set(items);
+                node.node("items").set(newItems);
             } catch (SerializationException e) {
                 throw new RuntimeException(e);
             }
