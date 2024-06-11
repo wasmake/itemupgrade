@@ -1,22 +1,11 @@
 package com.wasmake.itemupgrade.items;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.bukkit.inventory.ItemStack;
+import org.spongepowered.configurate.objectmapping.ConfigSerializable;
 
-@Getter
-@Setter
-public class ItemUpgradeConfig {
-    private int level;
-    private int cost;
-    private ItemStack item;
-
-    public ItemUpgradeConfig(int level, int cost, ItemStack item) {
-        this.level = level;
-        this.cost = cost;
-        this.item = item;
-    }
-
-    public ItemUpgradeConfig() {
-    }
-}
+@ConfigSerializable
+public record ItemUpgradeConfig(
+    int level,
+    int cost,
+    ItemStack item
+) { }

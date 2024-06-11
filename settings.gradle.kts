@@ -1,3 +1,3 @@
-rootProject.name="PluginTemplate"
+rootProject.name = "itemupgrade"
 
 include("api", "plugin")
