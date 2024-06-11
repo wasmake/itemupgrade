@@ -1,0 +1,16 @@
+main: 'com.wasmake.itemupgrade.ItemUpgrade'
+name: 'ItemUpgrade'
+version: '1.0.0'
+description: 'ItemUpgrade plugin for Paper'
+author: 'wasmake'
+api-version: '1.19'
+dependencies:
+  server:
+    PlaceholderAPI:
+      load: BEFORE
+      required: true
+      join-classpath: true
+    Essentials:
+      load: BEFORE
+      required: true
+      join-classpath: true
